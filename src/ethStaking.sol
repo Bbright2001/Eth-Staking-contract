@@ -21,7 +21,7 @@ contract FavoredBright is ERC20, Ownable {
 
 contract EthStaking is ERC20, Ownable {
   
-    ERC20 public reward;
+    ERC20 public token;
 
 
     mapping(address => uint256) public stakeAmount;
@@ -35,7 +35,7 @@ contract EthStaking is ERC20, Ownable {
     error invalidAmount();
     error invalidAddress();
     error rewardTransferFailed();
-    error stakeEthFailed();
+    error withdrawEthFailed();
     error stakingPeriodStillAlive();
     error tokenClaimed();
 
@@ -60,6 +60,22 @@ contract EthStaking is ERC20, Ownable {
     }
 
     function withdraw() external onlyAfterStakePeriod(){
+        uint256 amount = stakeAmount[msg.sender];
+        require(amount > 0, "You aren't a participant");
+        if(msg.sender == address(0) ) revert invalidAddress();
+        require(!success, "");
+
+
+        stakeAmount[msg.sender] = 0;
+        claimed[msg.sender] = true;
+
+        (bool success, ) = msg.sender.cal{value: amount}('');
+        if (!success) revert withdrawEthFailed();
+        uint256 rewardAmount = (amount * 10) / 1 ether;
+
+        require(token.transfer(msg.sender, rewardAmount), "Reward transfer failed");
 
     }
+
+    receive() external payable;
 }
