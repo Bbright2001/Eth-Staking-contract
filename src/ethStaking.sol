@@ -56,7 +56,7 @@ contract EthStaking is ERC20, Ownable {
 
         stakeAmount[msg.sender] += msg.value;
         stakeTimeStamp = block.timestamp;
-        claimed[msg.sender] = true;
+        claimed[msg.sender] = false;
     }
 
     function withdraw() external onlyAfterStakePeriod(){
