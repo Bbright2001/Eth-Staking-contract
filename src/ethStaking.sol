@@ -28,6 +28,8 @@ contract EthStaking is ERC20, Ownable {
 
     mapping(address => uint256) public stakeTimeStamp;
 
+    mapping(address => bool) public claimed;
+
     uint256 constant public STAKE_LOCK_PERIOD = 10 seconds;
 
     error invalidAmount();
@@ -35,6 +37,7 @@ contract EthStaking is ERC20, Ownable {
     error rewardTransferFailed();
     error stakeEthFailed();
     error stakingPeriodStillAlive();
+    error tokenClaimed();
 
     modifier onlyAfterStakePeriod() {
         
@@ -48,4 +51,15 @@ contract EthStaking is ERC20, Ownable {
         reward = _rewardToken;
     }
 
+    function stakeEth() external payable{
+        if (msg.value == 0) revert invalidAmount();
+
+        stakeAmount[msg.sender] += msg.value;
+        stakeTimeStamp = block.timestamp;
+        claimed[msg.sender] = true;
+    }
+
+    function withdraw() external onlyAfterStakePeriod(){
+
+    }
 }
