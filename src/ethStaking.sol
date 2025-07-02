@@ -34,7 +34,6 @@ contract EthStaking is ERC20, Ownable {
 
     error invalidAmount();
     error invalidAddress();
-    error rewardTransferFailed();
     error withdrawEthFailed();
     error stakingPeriodStillAlive();
     error tokenClaimed();
@@ -47,15 +46,16 @@ contract EthStaking is ERC20, Ownable {
         _;
     }
 
-    constructor(address _rewardToken){
-        reward = _rewardToken;
-    }
+    constructor(address initialOwner, address _rewardToken) ERC20("FavoredBright", "FB") Ownable(initialOwner) {
+    token = ERC20(_rewardToken);
+}
+
 
     function stakeEth() external payable{
         if (msg.value == 0) revert invalidAmount();
 
         stakeAmount[msg.sender] += msg.value;
-        stakeTimeStamp = block.timestamp;
+        stakeTimeStamp[msg.sender] = block.timestamp;
         claimed[msg.sender] = false;
     }
 
@@ -63,13 +63,14 @@ contract EthStaking is ERC20, Ownable {
         uint256 amount = stakeAmount[msg.sender];
         require(amount > 0, "You aren't a participant");
         if(msg.sender == address(0) ) revert invalidAddress();
-        require(!success, "");
+        if(claimed[msg.sender] == true) revert  tokenClaimed();
+
 
 
         stakeAmount[msg.sender] = 0;
         claimed[msg.sender] = true;
 
-        (bool success, ) = msg.sender.cal{value: amount}('');
+        (bool success, ) = msg.sender.call{value: amount}('');
         if (!success) revert withdrawEthFailed();
         uint256 rewardAmount = (amount * 10) / 1 ether;
 
@@ -77,5 +78,5 @@ contract EthStaking is ERC20, Ownable {
 
     }
 
-    receive() external payable;
+    receive() external payable{}
 }
