@@ -21,7 +21,7 @@ contract EthStakingTest is Test {
 
         function setUp() public{
 
-                staker = vm.addr(1);
+                staker = address(0x1);
 
                 mockToken = new TestToken();   
 
@@ -64,6 +64,16 @@ contract EthStakingTest is Test {
 
                 assertEq(staking.stakeAmount(staker), 0);
                 assertEq(staking.claimed(staker), true);
+
+                vm.stopPrank();
+        }
+
+        function testStakeZeroEth()  public {
+                vm.prank(staker);
+
+                vm.expectRevert(EthStaking.invalidAmount.selector);
+                staking.stakeEth{ value: 0 ether}();
+               
         }
 
 }
