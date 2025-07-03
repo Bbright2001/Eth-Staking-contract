@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 
 import {ERC20} from "lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import {IERC20} from "lib/openzeppelin-contracts/contracts/interfaces/IERC20.sol";
 import {Ownable} from "lib/openzeppelin-contracts/contracts/access/Ownable.sol";
 
 contract FavoredBright is ERC20, Ownable {
@@ -19,9 +20,9 @@ contract FavoredBright is ERC20, Ownable {
 }
 
 
-contract EthStaking is ERC20, Ownable {
+contract EthStaking is Ownable {
   
-    ERC20 public token;
+    IERC20 public token;
 
 
     mapping(address => uint256) public stakeAmount;
@@ -31,6 +32,7 @@ contract EthStaking is ERC20, Ownable {
     mapping(address => bool) public claimed;
 
     uint256 constant public STAKE_LOCK_PERIOD = 10 seconds;
+    uint256 constant public rewardRate = 10 ether;
 
     error invalidAmount();
     error invalidAddress();
@@ -38,16 +40,19 @@ contract EthStaking is ERC20, Ownable {
     error stakingPeriodStillAlive();
     error tokenClaimed();
 
+    event staked(address staker, uint256 amount);
+    event rewardClaimed(address to, uint256 rewardAmount, bool claimed);
+    
     modifier onlyAfterStakePeriod() {
         
-        if (block.timestamp< stakeTimeStamp[msg.sender] + STAKE_LOCK_PERIOD) {
+        if (block.timestamp < stakeTimeStamp[msg.sender] + STAKE_LOCK_PERIOD) {
             revert stakingPeriodStillAlive();
         }
         _;
     }
 
-    constructor(address initialOwner, address _rewardToken) ERC20("FavoredBright", "FB") Ownable(initialOwner) {
-    token = ERC20(_rewardToken);
+    constructor(address initialOwner, address _rewardToken)  Ownable(initialOwner) {
+    token = IERC20(_rewardToken);
 }
 
 
@@ -62,8 +67,7 @@ contract EthStaking is ERC20, Ownable {
     function withdraw() external onlyAfterStakePeriod(){
         uint256 amount = stakeAmount[msg.sender];
         require(amount > 0, "You aren't a participant");
-        if(msg.sender == address(0) ) revert invalidAddress();
-        if(claimed[msg.sender] == true) revert  tokenClaimed();
+        if(claimed[msg.sender]) revert  tokenClaimed();
 
 
 
@@ -76,6 +80,11 @@ contract EthStaking is ERC20, Ownable {
 
         require(token.transfer(msg.sender, rewardAmount), "Reward transfer failed");
 
+    }
+
+    function getStakeInfo(address _staker) external view returns (uint256, uint256, bool){
+
+        return (stakeAmount[_staker], stakeTimeStamp[_staker], claimed[_staker]);
     }
 
     receive() external payable{}
